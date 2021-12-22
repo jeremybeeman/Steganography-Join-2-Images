@@ -6,6 +6,7 @@ This repo focuses on joining two images together via different means. This repo 
 - [Options (Naming Conventions)](#options)
   * [Data Accessibility Options](#data-accessibility-options)
   * [Data to Encode Options](#data-to-encode-options)
+  * [Size Indication Options](#size-indication-options)
 
 ## Required Software 
 
