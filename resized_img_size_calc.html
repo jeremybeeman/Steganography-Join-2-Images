@@ -18,7 +18,7 @@
         function calc() 
         {
             //width and height are flipped in cv2, so the labeling here is to accomodate. Need to fix in code (12/22/21)
-            let result = document.getElementById("width_of_top_image").value * document.getElementById("height_of_top_image").value
+            let result = document.getElementById("width_of_top_image").value * document.getElementById("height_of_top_image").value * document.getElementById("num_bit_planes").value
             document.getElementById("poss_bit").innerHTML = result.toString()
             result = Number(Math.floor(result / 8)).toFixed(0)
             document.getElementById("poss_pixel").innerHTML = result.toString()
@@ -53,6 +53,9 @@
             <td>
                 <p>Pixel Height of Top Image </p>
             </td>
+            <td>
+                <p>Number of Bit Planes</p>
+            </td>
         </tr>
         <tr>
             <td>
@@ -61,9 +64,12 @@
             <td>
                 <input type="number" id="height_of_top_image"/>
             </td>
+            <td>
+                <input type="number" id="num_bit_planes"/>
+            </td>
 
         </tr>
-        <tr colspan="2">
+        <tr colspan="3">
             <td><input type="button" value="Calculate" onclick="calc()"/> </td>
         </tr>
         
