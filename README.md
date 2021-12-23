@@ -10,9 +10,11 @@ This repo focuses on joining two images together via different means. This repo 
 
 ## Required Software 
 
-| Software    | Version (or Comparable)  |
-|:-----------:|:------------------------:|
-| Python      | 3.9.7                    |
+| Software                               | Version (or Comparable)  |
+|:--------------------------------------:|:------------------------:|
+| Python                                 | 3.9.7                    |
+| Numpy                                  | 1.19.5                   |
+| opencv-contrib-python                  | 4.5.3.56                 |                    
 
 ## Notes 
 
@@ -20,7 +22,7 @@ This repo focuses on joining two images together via different means. This repo 
 
 ## Test Calculations 
 
-To see the size of your image with the seeded_bitwise_8X1 method, use [this link](https://raw.githack.com/jeremybeeman/Steganography-Join-2-Images/main/resized_img_size_calc.html).
+To see the size of your image with the bitwise_8X1 and 4X1 methods, use [this link](https://raw.githack.com/jeremybeeman/Steganography-Join-2-Images/main/resized_img_size_calc.html).
 
 ## Options 
 
@@ -42,5 +44,6 @@ To see the size of your image with the seeded_bitwise_8X1 method, use [this link
 
 | Option      | Meaning                                                                                         |
 |:-----------:|:-----------------------------------------------------------------------------------------------:|
-| 1X1      | The bottom image will be the same size as the top image                |
+| 1X1      | The bottom image will be the same size as the top image                       |
 | 8X1      | The bottom image is significantly smaller than the top image                  |
+| 4X1      | The bottom image is smaller than the top image, but not as extreme. Affects multiple bottom bit layers of the top image to encode the bottom image  |
