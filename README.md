@@ -18,6 +18,10 @@ This repo focuses on joining two images together via different means. This repo 
 
 - All images MUST be stored as .png instead of .jpeg or .jpg. This is because JPEGs are lossy, and will filter out these encoding methods, as these methods tend to be high frequency. 
 
+## Test Calculations 
+
+To see the size of your image with the seeded_bitwise_8X1 method, use [this link](https://raw.githack.com/jeremybeeman/Steganography-Join-2-Images/main/resized_img_size_calc.html).
+
 ## Options 
 
 ### Data Accessibility Options
