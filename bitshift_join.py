@@ -92,11 +92,10 @@ class bitshift_join():
         # lossy means it is joined pixel by pixel, instead of bit by bit
         [imgfront, imgbehind] = bitshift_join.resize_images(front_image_path, back_image_path, interpolation)
         if not seedKey:
-            seedKey = bitshift_join.seedKeyGen(imgfront.shape, 1, 0)
+            seedKey = bitshift_join.seedKeyGen(imgfront.shape, 1, 0, imgbehind.shape)
         seedKeyDecode = bitshift_join.seedKeyExtract(seedKey)
-        loopMax = imgfront.shape[0]*imgfront.shape[1]-1
+        loopMax = imgfront.shape[0]*imgfront.shape[1]
         newPixelLoc = np.random.RandomState(seed=seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax)
-        
         imgfront= np.uint8(np.uint8(imgfront >> (8-bits_used_by_front)) << (8-bits_used_by_front)) # removes bottom bits for joining
         imgbehind = np.uint8(imgbehind >> bits_used_by_front) # sets up the pixels for joining
         for i in range(0, loopMax):
@@ -112,10 +111,10 @@ class bitshift_join():
         # decodes an image that has been joined via simple 1X1 bitshifting 
         # returns BOTH images, the top image in the 0th index and the bottom image in the 1st index
         joinedImg = cv2.imread(encoded_image_path, cv2.IMREAD_COLOR)
-        imgTop = np.uint8((joinedImg >> (8-bits_used_by_front)<<(8-bits_used_by_front)))
+        imgTop = np.uint8((joinedImg >> (8-bits_used_by_front))<<(8-bits_used_by_front))
         imgBottom = np.uint8(joinedImg << bits_used_by_front)
         imgReformat = np.zeros(imgBottom.shape, np.uint8)
-        loopMax = joinedImg.shape[0]*joinedImg.shape[1]-1
+        loopMax = joinedImg.shape[0]*joinedImg.shape[1]
         pixelLoc = np.random.RandomState(seed=seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax)
         for i in range(0, loopMax):
             frontLoc = [i % joinedImg.shape[0], (i//joinedImg.shape[0])]
@@ -145,7 +144,7 @@ class bitshift_join():
         unusedBits = bits_possible - width_bottom*height_bottom*8
         ##joins the two images
         imgjoin = np.uint8(np.uint8(imgfront >> (8-bits_used_by_front)) << (8-bits_used_by_front)) # removes bottom bits for joining
-        loopMax = imgjoin.shape[0]*imgjoin.shape[1]-1
+        loopMax = imgjoin.shape[0]*imgjoin.shape[1]
         currBit = 0 
         currPixel = 0 
         #loops through the whole top image and joins
@@ -159,15 +158,15 @@ class bitshift_join():
                 if currBit > 7: 
                     currBit = 0 
                     currPixel += 1
-        return [np.array(imgjoin, dtype="uint8"), unusedBits, width_bottom]
+        return [np.array(imgjoin, dtype="uint8"), unusedBits, width_bottom, height_bottom]
 
-    def simple_bitwise_8X1_decode(encoded_image_path, unusedBits, width_bottom):
+    def simple_bitwise_8X1_decode(encoded_image_path, unusedBits, width_bottom, height_bottom):
         bits_used_by_front = 7
         joinedImg = cv2.imread(encoded_image_path, cv2.IMREAD_COLOR)
         imgTop = np.uint8((joinedImg >> (8-bits_used_by_front)<<(8-bits_used_by_front)))
         height_bottom = ((imgTop.shape[0] * imgTop.shape[1]) - unusedBits)//(width_bottom*8) #pulls the height out from the width
         imgBottom = np.zeros([height_bottom,  width_bottom, 3], np.uint8)
-        loopMax = joinedImg.shape[0]*joinedImg.shape[1]-1
+        loopMax = joinedImg.shape[0]*joinedImg.shape[1]
         currBit = 0 
         currPixel = 0 
         for i in range(0, loopMax):
