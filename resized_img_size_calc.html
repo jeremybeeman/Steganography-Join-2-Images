@@ -1,0 +1,110 @@
+<html>
+<head>
+	<script>
+		//function that display value
+		function dis(val)
+		{
+			document.getElementById("result").value+=val
+		}
+		
+		//function that evaluates the digit and return result
+		function solve()
+		{
+			let x = document.getElementById("result").value
+			let y = eval(x)
+			document.getElementById("result").value = y
+		}
+		
+        function calc() 
+        {
+            //width and height are flipped in cv2, so the labeling here is to accomodate. Need to fix in code (12/22/21)
+            let result = document.getElementById("width_of_top_image").value * document.getElementById("height_of_top_image").value
+            document.getElementById("poss_bit").innerHTML = result.toString()
+            result = Number(Math.floor(result / 8)).toFixed(0)
+            document.getElementById("poss_pixel").innerHTML = result.toString()
+            let scale_bottom = document.getElementById("width_of_top_image").value / document.getElementById("height_of_top_image").value
+            scale_bottom.toFixed(5)
+            result = Math.floor(Math.sqrt(result/scale_bottom)).toFixed(0)
+            document.getElementById("bottom_image_width").innerHTML = result.toString()
+            result = Math.floor(Number(result*scale_bottom)).toFixed(0)
+            document.getElementById("bottom_image_height").innerHTML = result.toString()
+            let efficiency = Number(document.getElementById("bottom_image_width").innerHTML)*Number(document.getElementById("bottom_image_height").innerHTML)/Number(document.getElementById("poss_pixel").innerHTML)*100
+            efficiency = efficiency.toFixed(3)
+            document.getElementById("efficiency").innerHTML = efficiency.toString() + "%"
+        }
+
+		//function that clear the display
+		function clr()
+		{
+			document.getElementById("result").value = ""
+		}
+	</script>
+	<!-- for styling -->
+
+</head>
+<!-- create table -->
+<body>
+	<div class = title ><h1>Bottom Image Size Calculator</h1></div>
+    <table border="2">
+        <tr>
+            <td>
+                <p>Pixel Width of Top Image </p>
+            </td>
+            <td>
+                <p>Pixel Height of Top Image </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input type="number" id="width_of_top_image"/>
+            </td>
+            <td>
+                <input type="number" id="height_of_top_image"/>
+            </td>
+
+        </tr>
+        <tr colspan="2">
+            <td><input type="button" value="Calculate" onclick="calc()"/> </td>
+        </tr>
+        
+    </table>
+    <h1>Calculated Values</h1>
+    <table border='2'>
+        <tr>
+            <td>
+                <p>Possible Bits</p>
+            </td>
+            <td>
+                <p>Possible Pixels</p>
+            </td>
+            <td>
+                <p>Bottom Image Pixel Width</p>
+            </td>
+            <td>
+                <p>Bottom Image Pixel Height</p>    
+            </td>
+            <td>
+                <p>Efficiency of Encoding</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p id="poss_bit">Null </p>
+            </td>
+            <td>
+                <p id="poss_pixel">Null</p>
+            </td>
+            <td>
+                <p id="bottom_image_width">Null</p>
+            </td>
+            <td>
+                <p id="bottom_image_height">Null</p>
+            </td>
+            <td>
+                <p id="efficiency">Null</p>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
