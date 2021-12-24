@@ -2,6 +2,7 @@ import cv2
 import numpy as np 
 import math 
 import random 
+from numba import jit
 
 #NOTE: The loopMax needs to be modified to reflect ALL of the bits/pixels. Missing 1 bit/pixel in all but the seeded_bitwise_8X1
 class bitshift_join():
@@ -122,6 +123,41 @@ class bitshift_join():
             imgReformat[backLoc[0]][backLoc[1]] += imgBottom[frontLoc[0]][frontLoc[1]]  
 
         return [np.array(imgTop, dtype="uint8"), np.array(imgReformat, dtype="uint8")]
+    
+    def simple_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind):
+        bits_possible = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
+        unusedBits = bits_possible - imgbehind.shape[0]*imgbehind.shape[1]*8
+        loopMax = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
+        currBit = 0 
+        currPixel = 0 
+        #loops through the whole top image and joins
+        for i in range(0, loopMax):
+            if i >= unusedBits:
+                frontLoc = [i % imgjoin.shape[0], ((i//imgjoin.shape[0]) % (imgjoin.shape[1])), (i//(imgjoin.shape[0]*imgjoin.shape[1]))]
+                backLoc = [currPixel % imgbehind.shape[0], (currPixel//imgbehind.shape[0])]
+                #places the current bit of the bottom image into the top image
+                imgjoin[frontLoc[0]][frontLoc[1]] += (((imgbehind[backLoc[0]][backLoc[1]] & (1<<currBit)) >> (currBit))<<(frontLoc[2])).astype(np.uint8)
+                currBit += 1
+                if currBit > 7: 
+                    currBit = 0 
+                    currPixel += 1
+        return imgjoin
+    
+    def simple_bitwise_decode_loop(joinedImg, botImgShape, numBitPlanes, unusedBits):
+        imgBottom = np.zeros(botImgShape, dtype=np.uint8)
+        loopMax = joinedImg.shape[0]*joinedImg.shape[1]*numBitPlanes
+        currBit = 0 
+        currPixel = 0 
+        for i in range(0, loopMax):
+            if i >= unusedBits: #once the unused bits have been skipped, join
+                frontLoc = [i % joinedImg.shape[0], ((i//joinedImg.shape[0]) % (joinedImg.shape[1])), (i//(joinedImg.shape[0]*joinedImg.shape[1]))]
+                backLoc = [currPixel % imgBottom.shape[0], (currPixel//imgBottom.shape[0])]
+                imgBottom[backLoc[0]][backLoc[1]] |= ((((joinedImg[frontLoc[0]][frontLoc[1]] & (1<<(frontLoc[2])))>>frontLoc[2])) << currBit).astype(np.uint8) #isolates the current bit and ors it with the current pixel
+                currBit += 1
+                if currBit > 7: 
+                    currBit = 0 
+                    currPixel += 1
+        return imgBottom
 
     def simple_bitwise_8X1_encode(front_image_path, back_image_path, interpolation=cv2.INTER_AREA):
         #current model: 12/21/21 shrinks the image to a scaled proportion that will fit within the 8-bit constraint of the top image. 
@@ -138,11 +174,11 @@ class bitshift_join():
 
         height_bottom = int(math.sqrt(pixels_possible//scale_bottom))
         width_bottom = int(height_bottom * scale_bottom)
-        imgbehind = cv2.resize(imgbehind, [width_bottom, height_bottom], interpolation)
+        imgbehind = cv2.resize(imgbehind, [width_bottom, height_bottom], interpolation).astype(np.uint8)
         bits_used_by_front = 7
         unusedBits = bits_possible - width_bottom*height_bottom*8
         ##joins the two images
-        imgjoin = np.uint8(np.uint8(imgfront >> (8-bits_used_by_front)) << (8-bits_used_by_front)) # removes bottom bits for joining
+        imgjoin = np.array(np.uint8(np.uint8(imgfront >> (8-bits_used_by_front)) << (8-bits_used_by_front)), dtype="uint8") # removes bottom bits for joining
         loopMax = imgjoin.shape[0]*imgjoin.shape[1]
         currBit = 0 
         currPixel = 0 
@@ -257,44 +293,28 @@ class bitshift_join():
         height_bottom = int(math.sqrt(pixels_possible//scale_bottom))
         width_bottom = int(height_bottom * scale_bottom)
         if pixels_possible < imgbehind.shape[0]*imgbehind.shape[1]: #if the current shape of the behind image is greater than pixels possible, then resize
-            imgbehind = cv2.resize(imgbehind, [width_bottom, height_bottom], interpolation)
-        unusedBits = bits_possible - imgbehind.shape[0]*imgbehind.shape[1]*8
+            imgbehind = np.array(cv2.resize(imgbehind, [width_bottom, height_bottom], interpolation), dtype="uint8")
         ##joins the two images
+        unusedBits = bits_possible - imgbehind.shape[0]*imgbehind.shape[1]*8
         imgjoin = np.uint8(np.uint8(imgfront >> (numBitPlanes)) << (numBitPlanes)) # removes bottom bits for joining
-        loopMax = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
-        currBit = 0 
-        currPixel = 0 
-        #loops through the whole top image and joins
-        for i in range(0, loopMax):
-            if i >= unusedBits:
-                frontLoc = [i % imgjoin.shape[0], ((i//imgjoin.shape[0]) % (imgjoin.shape[1])), (i//(imgjoin.shape[0]*imgjoin.shape[1]))]
-                backLoc = [currPixel % imgbehind.shape[0], (currPixel//imgbehind.shape[0])]
-                #places the current bit of the bottom image into the top image
-                imgjoin[frontLoc[0]][frontLoc[1]] += np.uint8(((imgbehind[backLoc[0]][backLoc[1]] & (1<<currBit)) >> (currBit))<<(frontLoc[2]))
-                currBit += 1
-                if currBit > 7: 
-                    currBit = 0 
-                    currPixel += 1
+        imgjoin = bitshift_join.simple_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind)
         return [np.array(imgjoin, dtype="uint8"), unusedBits, imgbehind.shape, numBitPlanes]
 
 #not done
     def simple_bitwise_4X1_decode(encoded_image_path, unusedBits, imgBehindShape, numBitPlanes):
-        joinedImg = cv2.imread(encoded_image_path, cv2.IMREAD_COLOR)
+        joinedImg = np.uint8(cv2.imread(encoded_image_path, cv2.IMREAD_COLOR))
         imgTop = np.uint8((joinedImg >> (numBitPlanes)<<(numBitPlanes)))
         width_bottom = imgBehindShape[0]
         height_bottom = imgBehindShape[1]
-        imgBottom = np.zeros([width_bottom,  height_bottom, 3], np.uint8)
-        loopMax = joinedImg.shape[0]*joinedImg.shape[1]*numBitPlanes
-        currBit = 0 
-        currPixel = 0 
-        for i in range(0, loopMax):
-            if i >= unusedBits: #once the unused bits have been skipped, join
-                frontLoc = [i % imgTop.shape[0], ((i//imgTop.shape[0]) % (imgTop.shape[1])), (i//(imgTop.shape[0]*imgTop.shape[1]))]
-                backLoc = [currPixel % imgBottom.shape[0], (currPixel//imgBottom.shape[0])]
-                imgBottom[backLoc[0]][backLoc[1]] |= ((((joinedImg[frontLoc[0]][frontLoc[1]] & (1<<(frontLoc[2])))>>frontLoc[2])) << currBit) #isolates the current bit and ors it with the current pixel
-                currBit += 1
-                if currBit > 7: 
-                    currBit = 0 
-                    currPixel += 1
+        ####################where numba will replace
+        imgBottom = bitshift_join.simple_bitwise_decode_loop(joinedImg, [width_bottom, height_bottom, 3], numBitPlanes, unusedBits)
         return [np.array(imgTop, dtype="uint8"), np.array(imgBottom, dtype="uint8")]
 
+    def setup():
+        imgtop = np.zeros((5, 5, 3), np.uint8)
+        imgBottom = np.zeros((5, 5, 3), np.uint8)
+        cv2.imwrite("setup1.png", imgtop)
+        cv2.imwrite("setup2.png", imgBottom)
+        [joinedimg, unusedBits, shapeBehind, numBitPlanes] = bitshift_join.simple_bitwise_4X1_encode("setup1.png", "setup2.png", 1)
+        cv2.imwrite("setup3.png", joinedimg)
+        bitshift_join.simple_bitwise_4X1_decode("setup3.png", unusedBits, shapeBehind, numBitPlanes)
