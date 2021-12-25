@@ -1,0 +1,1 @@
+D:\stegonography\encoding_bottom_images\Steganography-Join-2-Images\bitshift_manipulation_lib\x64\Debug\bitshift_manipulation_lib.dll
