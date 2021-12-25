@@ -2,7 +2,9 @@ import cv2
 import numpy as np 
 import math 
 import random 
-from numba import jit
+import ctypes
+#from numba import jit
+#rn only works on windows32
 
 #NOTE: The loopMax needs to be modified to reflect ALL of the bits/pixels. Missing 1 bit/pixel in all but the seeded_bitwise_8X1
 class bitshift_join():
@@ -124,23 +126,25 @@ class bitshift_join():
 
         return [np.array(imgTop, dtype="uint8"), np.array(imgReformat, dtype="uint8")]
     
-    def simple_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind):
-        bits_possible = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
-        unusedBits = bits_possible - imgbehind.shape[0]*imgbehind.shape[1]*8
-        loopMax = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
-        currBit = 0 
-        currPixel = 0 
-        #loops through the whole top image and joins
-        for i in range(0, loopMax):
-            if i >= unusedBits:
-                frontLoc = [i % imgjoin.shape[0], ((i//imgjoin.shape[0]) % (imgjoin.shape[1])), (i//(imgjoin.shape[0]*imgjoin.shape[1]))]
-                backLoc = [currPixel % imgbehind.shape[0], (currPixel//imgbehind.shape[0])]
-                #places the current bit of the bottom image into the top image
-                imgjoin[frontLoc[0]][frontLoc[1]] += (((imgbehind[backLoc[0]][backLoc[1]] & (1<<currBit)) >> (currBit))<<(frontLoc[2])).astype(np.uint8)
-                currBit += 1
-                if currBit > 7: 
-                    currBit = 0 
-                    currPixel += 1
+    def simple_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind, unusedBits):
+        #_bLib = ctypes.CDLL("./bitshift_join.so")
+        #_bLib = ctypes.CDLL("./bitshift_manipulation_lib.dll")
+        _bLib = ctypes.CDLL("D:\stegonography\encoding_bottom_images\Steganography-Join-2-Images\\bitshift_manipulation_lib\\x64\Debug\\bitshift_manipulation_lib.dll")
+        #(unsigned char **imageBottom[3], long imageBottomShape[3], unsigned char **imageJoin[3], long imageJoinShape[3], long unusedBits)
+        _bLib.binary_combine.argtypes = [
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        #ctypes.c_int64,
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        #ctypes.c_int64,
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        ctypes.c_int32, 
+                        ctypes.c_uint8
+                    ]
+        _bLib.binary_combine.restype = None
+        imgjoinShape = np.asarray(imgjoin.shape)
+        imgbehindShape = np.asarray(imgbehind.shape)
+        _bLib.binary_combine(imgbehind, imgbehindShape, imgjoin, imgjoinShape, unusedBits, numBitPlanes)
         return imgjoin
     
     def simple_bitwise_decode_loop(joinedImg, botImgShape, numBitPlanes, unusedBits):
@@ -297,7 +301,8 @@ class bitshift_join():
         ##joins the two images
         unusedBits = bits_possible - imgbehind.shape[0]*imgbehind.shape[1]*8
         imgjoin = np.uint8(np.uint8(imgfront >> (numBitPlanes)) << (numBitPlanes)) # removes bottom bits for joining
-        imgjoin = bitshift_join.simple_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind)
+       # print("going in")
+        imgjoin = bitshift_join.simple_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind, unusedBits)
         return [np.array(imgjoin, dtype="uint8"), unusedBits, imgbehind.shape, numBitPlanes]
 
 #not done
@@ -311,8 +316,8 @@ class bitshift_join():
         return [np.array(imgTop, dtype="uint8"), np.array(imgBottom, dtype="uint8")]
 
     def setup():
-        imgtop = np.zeros((5, 5, 3), np.uint8)
-        imgBottom = np.zeros((5, 5, 3), np.uint8)
+        imgtop = np.zeros((500, 500, 3), np.uint8)
+        imgBottom = np.zeros((500, 500, 3), np.uint8)
         cv2.imwrite("setup1.png", imgtop)
         cv2.imwrite("setup2.png", imgBottom)
         [joinedimg, unusedBits, shapeBehind, numBitPlanes] = bitshift_join.simple_bitwise_4X1_encode("setup1.png", "setup2.png", 1)
