@@ -5,41 +5,59 @@
 #include <stdio.h>
 #include "bit_manipulate.h"
 
-
+ 
 void binary_combine(uint8_t *imageBottom, int32_t *imageBottomShape, uint8_t *imageJoin, int32_t *imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes) {
-    const int64_t loopMax = (imageBottomShape[0]*imageBottomShape[1]) * 3* ((int64_t)numBitPlanes);
-    //long frontLoc[3];
-    //long backLoc[3];
+    const int64_t joinShapeFull = ((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]) * 3;
+    const int64_t loopMax = (joinShapeFull * ((int64_t)numBitPlanes));
+    const int64_t unusedBitsT = joinShapeFull - (joinShapeFull * 8);
     int64_t currPixel = 0;
-    short currBit = 0;
-    for (int64_t i = 0; i < loopMax; i+=3) {
-        if (i >= unusedBits) {
-            //frontLoc[0] = i % imageJoinShape[0];
-            //frontLoc[1] = (i / imageJoinShape[0]) % imageJoinShape[0];
-            //frontLoc[2] = (i / (imageJoinShape[0] * imageJoinShape[1]));
-            //backLoc[0] = (currPixel % imageBottomShape[0]);
-            //backLoc[1] = (currPixel / imageBottomShape[0]);
-            for (short rgb = 0; rgb < 3; rgb++) {
-                imageJoin[(i % (imageBottomShape[0] * imageBottomShape[1] * 3)) + rgb] += (((imageBottom[currPixel + rgb] & (1 << currBit)) >> currBit) << (i / (imageJoinShape[0] * imageJoinShape[1] * 3)));
-
-                //imageJoin[frontLoc[0]][frontLoc[1]][rgb] += (((imageBottom[backLoc[0]][backLoc[1]][rgb] & (1 << currBit)) >> currBit) << frontLoc[2]);
+    int8_t currBit = 0;
+    for (int64_t i = unusedBits*3; i < loopMax; i+=3) {
+            for (short bgr = 0; bgr < 3; bgr++) {
+                imageJoin[(i % joinShapeFull) + bgr] += (((imageBottom[currPixel + bgr] & (1 << currBit)) >> currBit) << (i / joinShapeFull));
             }
             currBit++;
             if (currBit > 7) {
                 currBit = 0;
-                currPixel += 3;
-                //if (currPixel > imageJoinShape[0] * imageJoinShape[1] * imageJoinShape[2]) {
-                //    currPixel -= 6;
-                //}
+                currPixel +=3;
             }
-            //printf((char *)(imageJoin[i]));
+        }
+    //return loopMax;
+
+}
+
+void binary_split(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* joinedImage, int32_t* joinedImageShape, int32_t unusedBits, uint8_t numBitPlanes) {
+    const int64_t joinShapeFull = ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1]) * 3;
+    int64_t loopMax = joinShapeFull * ((int64_t)numBitPlanes);
+    int64_t currPixel = 0;
+    int8_t currBit = 0;
+    const int64_t unusedBitsT = joinShapeFull - joinShapeFull* 8;
+    for (int64_t i = unusedBits*3; i < loopMax; i += 3) {
+        int64_t currNumBitPlane = (int64_t)((i / ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1] * 3)));
+        for (short bgr = 0; bgr < 3; bgr++) {
+            imageBottom[currPixel + bgr] |= ((joinedImage[(i % ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1] * 3)) + bgr] & (1<<currNumBitPlane)) >> currNumBitPlane) << currBit;
+ 
+        }
+        currBit++;
+        if (currBit > 7) {
+            currBit = 0;
+            currPixel += 3;
         }
     }
 
 }
 
-//void binary_split(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* imageJoin, int32_t* imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes) {
-//
-//
-//}
-
+//imgBottom = np.zeros(botImgShape, dtype = np.uint8)
+//loopMax = joinedImg.shape[0] * joinedImg.shape[1] * numBitPlanes
+//currBit = 0
+//currPixel = 0
+//for i in range(0, loopMax) :
+//    if i >= unusedBits : #once the unused bits have been skipped, join
+//        frontLoc = [i % joinedImg.shape[0], ((i//joinedImg.shape[0]) % (joinedImg.shape[1])), (i//(joinedImg.shape[0]*joinedImg.shape[1]))]
+//            backLoc = [currPixel % imgBottom.shape[0], (currPixel//imgBottom.shape[0])]
+//                imgBottom[backLoc[0]][backLoc[1]] |= ((((joinedImg[frontLoc[0]][frontLoc[1]] & (1 << (frontLoc[2]))) >> frontLoc[2])) << currBit).astype(np.uint8) #isolates the current bit and ors it with the current pixel
+//                currBit += 1
+//                if currBit > 7:
+//currBit = 0
+//currPixel += 1
+//return imgBottom
