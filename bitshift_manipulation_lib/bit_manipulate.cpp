@@ -63,3 +63,24 @@ void seeded_bitwise_encode(uint8_t* imageBottom, int32_t* imageBottomShape, uint
 
 }
 
+void seeded_bitwise_decode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* joinedImage, int32_t* joinedImageShape, int32_t unusedBits, uint8_t numBitPlanes, uint64_t* pixelPermLocs) {
+
+    const int64_t joinShapeFull = ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1]);
+    const int64_t loopMax = (((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1]) * ((int64_t)numBitPlanes));
+    int64_t currPixel = 0;
+    int8_t currBit = 0;
+    for (int64_t i = unusedBits; i < loopMax; i += 1) {
+        for (short bgr = 0; bgr < 3; bgr++) {
+            int64_t currNumBitPlane = (int64_t)((pixelPermLocs[i] / ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1])));
+            imageBottom[currPixel + bgr] |= ((joinedImage[(pixelPermLocs[i] % ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1]))*3 + bgr] & (1 << currNumBitPlane)) >> currNumBitPlane) << currBit;
+            //imageJoin[(pixelPermLocs[i] % joinShapeFull) * 3 + bgr] += (((imageBottom[currPixel + bgr] & (1 << currBit)) >> currBit) << (pixelPermLocs[i] / (joinShapeFull)));
+        }
+        currBit++;
+        if (currBit > 7) {
+            currBit = 0;
+            currPixel += 3;
+        }
+    }
+
+}
+

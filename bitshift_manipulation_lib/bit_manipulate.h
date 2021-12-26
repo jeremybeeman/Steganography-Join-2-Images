@@ -18,4 +18,7 @@ extern "C" {
 	__declspec(dllexport) void seeded_bitwise_encode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* imageJoin, int32_t* imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes, uint64_t *pixelPermLocs);
 }
 
+extern "C" {
+	__declspec(dllexport) void seeded_bitwise_decode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* imageJoin, int32_t* imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes, uint64_t* pixelPermLocs);
+}
 
