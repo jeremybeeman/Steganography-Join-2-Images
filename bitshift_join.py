@@ -47,6 +47,18 @@ class bitshift_join():
                     ]
         self._bLib.seeded_bitwise_encode.restype = None
 
+        self._bLib.seeded_bitwise_decode.argtypes = [
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        #ctypes.c_int64,
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        #ctypes.c_int64,
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        ctypes.c_int32, 
+                        ctypes.c_uint8, 
+                        np.ctypeslib.ndpointer(dtype=np.uint64, ndim=1, flags='C_CONTIGUOUS')                      
+                    ]
+        self._bLib.seeded_bitwise_decode.restype = None
 
     def seedKeyGen(self,imgShape, numBitPlanes, unusedBits, bottomImgShape): 
         #generates a string of numbers and letters that equivocate to the seed. 
@@ -311,8 +323,8 @@ class bitshift_join():
         pixels_possible = bits_possible//8 
         scale_bottom = imgbehind.shape[0]/imgbehind.shape[1] #gets a ratio of 0th to 1st 
 
-        height_bottom = int(math.sqrt(pixels_possible//scale_bottom))
-        width_bottom = int(height_bottom * scale_bottom)
+        width_bottom = int(math.sqrt(pixels_possible//scale_bottom))
+        height_bottom = int(width_bottom * scale_bottom)
         if pixels_possible < imgbehind.shape[0]*imgbehind.shape[1]: #if the current shape of the behind image is greater than pixels possible, then resize
             imgbehind = np.array(cv2.resize(imgbehind, [width_bottom, height_bottom], interpolation), dtype="uint8")
         ##joins the two images
@@ -341,8 +353,8 @@ class bitshift_join():
         bits_possible = imgfront.shape[0] * imgfront.shape[1] * numBitPlanes
         pixels_possible = bits_possible//8 
         scale_bottom = imgbehind.shape[0]/imgbehind.shape[1] #gets a ratio of 0th to 1st 
-        height_bottom = int(math.sqrt(pixels_possible//scale_bottom))
-        width_bottom = int(height_bottom * scale_bottom)
+        width_bottom = int(math.sqrt(pixels_possible//scale_bottom))
+        height_bottom = int(width_bottom * scale_bottom)
         if pixels_possible < imgbehind.shape[0]*imgbehind.shape[1]: #if the current shape of the behind image is greater than pixels possible, then resize
             imgbehind = np.array(cv2.resize(imgbehind, [width_bottom, height_bottom], interpolation), dtype="uint8")
         ##joins the two images
@@ -353,10 +365,33 @@ class bitshift_join():
         seedKeyDecode = self.seedKeyExtract(seedKey)
         loopMax = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
         pixelLoc = np.random.RandomState(seed=seedKeyDecode[0]*seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
-        print(pixelLoc)
         self.seeded_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind, unusedBits, pixelLoc)
 
         return [imgjoin, seedKey]
+
+    def seeded_bitwise_decode_loop(self, joinedImg, botImgShape, numBitPlanes, unusedBits, pixelPermLocs):
+        imgBottom = np.zeros(botImgShape, dtype=np.uint8)
+        #print(imgBottom.shape, joinedImg.shape)
+        imgjoinShape = np.asarray(joinedImg.shape)
+        imgBottomShape = np.asarray(imgBottom.shape)
+        self._bLib.seeded_bitwise_decode(imgBottom, imgBottomShape, joinedImg, imgjoinShape, unusedBits, numBitPlanes, pixelPermLocs)
+        return np.array(imgBottom, dtype="uint8")
+
+    def seeded_bitwise_4X1_decode(self,encoded_image_path, seedKey):
+        seedKeyDecode = self.seedKeyExtract(seedKey)
+        unusedBits = seedKeyDecode[3]
+        imgBehindShape = [seedKeyDecode[4], seedKeyDecode[5]]
+        numBitPlanes = seedKeyDecode[6]
+
+        joinedImg = cv2.imread(encoded_image_path, cv2.IMREAD_COLOR)
+        imgTop = ((joinedImg >> (numBitPlanes))<<(numBitPlanes))
+        width_bottom = imgBehindShape[0]
+        height_bottom = imgBehindShape[1]
+        loopMax = joinedImg.shape[0]*joinedImg.shape[1]*numBitPlanes
+        pixelLoc = np.random.RandomState(seed=seedKeyDecode[0]*seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
+        imgBottom = self.seeded_bitwise_decode_loop(joinedImg, [width_bottom, height_bottom, 3], numBitPlanes, unusedBits, pixelLoc)
+        return [np.array(imgTop, dtype="uint8"), np.array(imgBottom, dtype="uint8")]
+
 
     #def seeded_bitwise_8X1_encode(self,front_image_path, back_image_path, seedKey="", interpolation=cv2.INTER_AREA):
     #    [imgfront, imgbehind] = self.resize_images(front_image_path, back_image_path, interpolation)
