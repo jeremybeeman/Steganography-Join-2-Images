@@ -6,10 +6,9 @@
 #include "bit_manipulate.h"
 
  
-void binary_combine(uint8_t *imageBottom, int32_t *imageBottomShape, uint8_t *imageJoin, int32_t *imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes) {
+void simple_bitwise_encode(uint8_t *imageBottom, int32_t *imageBottomShape, uint8_t *imageJoin, int32_t *imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes) {
     const int64_t joinShapeFull = ((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]) * 3;
     const int64_t loopMax = (joinShapeFull * ((int64_t)numBitPlanes));
-    const int64_t unusedBitsT = joinShapeFull - (joinShapeFull * 8);
     int64_t currPixel = 0;
     int8_t currBit = 0;
     for (int64_t i = unusedBits*3; i < loopMax; i+=3) {
@@ -26,12 +25,11 @@ void binary_combine(uint8_t *imageBottom, int32_t *imageBottomShape, uint8_t *im
 
 }
 
-void binary_split(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* joinedImage, int32_t* joinedImageShape, int32_t unusedBits, uint8_t numBitPlanes) {
+void simple_bitwise_decode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* joinedImage, int32_t* joinedImageShape, int32_t unusedBits, uint8_t numBitPlanes) {
     const int64_t joinShapeFull = ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1]) * 3;
     int64_t loopMax = joinShapeFull * ((int64_t)numBitPlanes);
     int64_t currPixel = 0;
     int8_t currBit = 0;
-    const int64_t unusedBitsT = joinShapeFull - joinShapeFull* 8;
     for (int64_t i = unusedBits*3; i < loopMax; i += 3) {
         int64_t currNumBitPlane = (int64_t)((i / ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1] * 3)));
         for (short bgr = 0; bgr < 3; bgr++) {
@@ -47,17 +45,21 @@ void binary_split(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* join
 
 }
 
-//imgBottom = np.zeros(botImgShape, dtype = np.uint8)
-//loopMax = joinedImg.shape[0] * joinedImg.shape[1] * numBitPlanes
-//currBit = 0
-//currPixel = 0
-//for i in range(0, loopMax) :
-//    if i >= unusedBits : #once the unused bits have been skipped, join
-//        frontLoc = [i % joinedImg.shape[0], ((i//joinedImg.shape[0]) % (joinedImg.shape[1])), (i//(joinedImg.shape[0]*joinedImg.shape[1]))]
-//            backLoc = [currPixel % imgBottom.shape[0], (currPixel//imgBottom.shape[0])]
-//                imgBottom[backLoc[0]][backLoc[1]] |= ((((joinedImg[frontLoc[0]][frontLoc[1]] & (1 << (frontLoc[2]))) >> frontLoc[2])) << currBit).astype(np.uint8) #isolates the current bit and ors it with the current pixel
-//                currBit += 1
-//                if currBit > 7:
-//currBit = 0
-//currPixel += 1
-//return imgBottom
+void seeded_bitwise_encode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* imageJoin, int32_t* imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes, uint64_t* pixelPermLocs) {
+    const int64_t joinShapeFull = ((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]);
+    const int64_t loopMax = (((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]) * ((int64_t)numBitPlanes));
+    int64_t currPixel = 0;
+    int8_t currBit = 0;
+    for (int64_t i = unusedBits; i < loopMax; i += 1) {
+        for (short bgr = 0; bgr < 3; bgr++) {
+            imageJoin[(pixelPermLocs[i] % joinShapeFull) * 3 + bgr] += (((imageBottom[currPixel + bgr] & (1 << currBit)) >> currBit) << (pixelPermLocs[i] / (joinShapeFull)));
+        }
+        currBit++;
+        if (currBit > 7) {
+            currBit = 0;
+            currPixel += 3;
+        }
+    }
+
+}
+
