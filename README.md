@@ -1,5 +1,7 @@
-![Pixelwise Example Image](https://github.com/jeremybeeman/Steganography-Join-2-Images/edit/main/README_images/pixelwise_example.png)
 # Steganography-Join-2-Images
+
+![Pixelwise Example Image](https://github.com/jeremybeeman/Steganography-Join-2-Images/blob/main/README_images/pixelwise_example.png)
+
 This repo focuses on joining two images together via different means. This repo contains a library that joins a top image with a bottom image. The different joins have tradeoffs. 
 ## Table of Contents 
 - [Summary](#summary)
