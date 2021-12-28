@@ -1,7 +1,10 @@
+![Pixelwise Example Image](https://github.com/jeremybeeman/Steganography-Join-2-Images/edit/main/README_images/pixelwise_example.png)
 # Steganography-Join-2-Images
 This repo focuses on joining two images together via different means. This repo contains a library that joins a top image with a bottom image. The different joins have tradeoffs. 
 ## Table of Contents 
 - [Summary](#summary)
+- [Uses](#uses)
+- [Definition of Main Terms](#definition-of-terms)
 - [Required Software](#required-software)
 - [Python Used Modules](#python-used-modules)
 - [Before Starting](#notes)
@@ -20,6 +23,9 @@ This repository combines two images together using various methods of encoding. 
 - Making NFTs more hardened to right-clicking (one can't access the second image without a code). 
 - Making ARGs that are tougher to crack. 
 - Other stuff.........
+
+## Definition of Terms
+
 
 ## Required Software 
 
@@ -72,3 +78,11 @@ To see the size of your image with the bitwise_8X1 and 4X1 methods, use [this li
 | 1X1      | The bottom image will be the same size as the top image                       |
 | 8X1      | The bottom image is significantly smaller than the top image                  |
 | 4X1      | The bottom image is smaller than the top image, but not as extreme. Affects multiple bottom bit layers of the top image to encode the bottom image  |
+
+
+## Image Citations 
+
+Thanks to Pixabay's free to use license for some of the images shown. For the images from pixabay, see the links below: 
+- [Lake Image](https://pixabay.com/images/id-2297204/)
+- [Rose Image](https://pixabay.com/images/id-1642970/)
+- [Dog Image](https://pixabay.com/images/id-1123016/)
