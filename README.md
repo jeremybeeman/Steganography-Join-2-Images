@@ -9,7 +9,9 @@ This repo focuses on joining two images together via different means. This repo 
    * [Required Software](#required-software)
    * [Python Used Modules](#python-used-modules)
 - [Before Starting](#notes)
-- [Definition of Main Terms](#definition-of-terms)
+- [Definition of Main Terms](#definitions)
+   * [Terms](#terms)
+   * [Seed Key Guide](#seed-key-guide)
 - [Test Calculations Website](#test-calculations)
 - [Options (Naming Conventions)](#options)
   * [Data Accessibility Options](#data-accessibility-options)
@@ -52,7 +54,11 @@ This repository combines two images together using various methods of encoding. 
 - This library cannot interface with any transparent images. There must be a background to the image for this system.
 - This is a WINDOWS library right now, due to the .dll extension.
 
-## Definition of Terms
+## Definitions
+
+### Terms
+
+**Bit Planes/Layers:** Name for a specific bit of an image. All 8-bit images have 8 bit planes. The lowest significant bit is the lowest bit plane. The most significant bit is the highest bit plane. When there's talk of multiple bit planes being used, the count starts at the lowest significant bit and goes up 1 bit plane at a time. 
 
 **Pixelwise Encoding/Decoding:** Where the bottom image's pixels are placed in directly on top of the top image's bottom bits. This preserves the original size of the bottom image, but degrades the original colors.
 
@@ -69,6 +75,23 @@ This repository combines two images together using various methods of encoding. 
 **Simple:** All of the pixels or bits of the bottom image aren't scrambled using a seed key. There is no need for a seed key, as the data is arranged in a direct manner (NOTE: while the data may not be scrambled, there might need to be some data available to decode the image. Simple just means all the bitwise/pixelwise data is placed in a linear fashion, and there's not any jumping around of bits/pixels). 
 
 **Seeded:** All of the pixels or bits of the bottom image are scrambled around using a seed key. Without the seed key, it is very hard to extract the bottom image easily. 
+
+### Seed Key Guide
+
+For the seed key, each component serves a purpose. In a seed, a number is followed by a lowercase letter. In order to unravel the values, the number is multiplied by the letter where a=1 and z=26. The seed will look slightly different between pixelwise and bitwise operations. For the seed keys, the values are as follows:
+1. Bit Plane Layer to start at (starting at 0 and going up from there). 
+2. Height Seed Start to start where the scramble occurs. 
+3. Width Seed Start to start where the scramble occurs. 
+4. Unused Pixels of Top Image to denote how many unused pixels are there. Used for padding in bitwise operations when the bottom image can't fit within all of the pixels and perserve its aspect ratio. 
+5. Height of bottom image to denote the shape of the bottom image. 
+6. Width of bottom image to denote the shape of the bottom image. 
+7. Number of bit planes used to denote how many bit planes are possible to be decoded. Mainly used for bitwise operations. 
+
+All pixelwise operations have 0 unused pixels and a 1a for the number of bit planes used. 
+
+| ![Seed Key Guide](https://github.com/jeremybeeman/Steganography-Join-2-Images/blob/main/README_images/seed_key.png) |
+|:---:|
+| Guide to the parts of the seed key. As shown, some of the seed key is a random seed which unravels the bottom image, while other parts highlight basic information to allow for knowing what to unseed. | 
 
 ## Test Calculations 
 
