@@ -364,7 +364,7 @@ class bitshift_join():
         seedKey = self.seedKeyGen(imgjoin.shape, numBitPlanes, unusedBits, imgbehind.shape)
         seedKeyDecode = self.seedKeyExtract(seedKey)
         loopMax = imgjoin.shape[0]*imgjoin.shape[1]*numBitPlanes
-        pixelLoc = np.random.RandomState(seed=seedKeyDecode[0]*seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
+        pixelLoc = np.random.RandomState(seed=(seedKeyDecode[0]+1)*seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
         self.seeded_bitwise_encode_loop(imgjoin, numBitPlanes, imgbehind, unusedBits, pixelLoc)
 
         return [imgjoin, seedKey]
@@ -388,7 +388,8 @@ class bitshift_join():
         width_bottom = imgBehindShape[0]
         height_bottom = imgBehindShape[1]
         loopMax = joinedImg.shape[0]*joinedImg.shape[1]*numBitPlanes
-        pixelLoc = np.random.RandomState(seed=seedKeyDecode[0]*seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
+        pixelLoc = np.random.RandomState(seed=(seedKeyDecode[0]+1)*seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
+        print(pixelLoc)
         imgBottom = self.seeded_bitwise_decode_loop(joinedImg, [width_bottom, height_bottom, 3], numBitPlanes, unusedBits, pixelLoc)
         return [np.array(imgTop, dtype="uint8"), np.array(imgBottom, dtype="uint8")]
 
