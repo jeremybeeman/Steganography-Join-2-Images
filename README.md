@@ -50,6 +50,7 @@ This repository combines two images together using various methods of encoding. 
 - All images MUST be stored as .png instead of .jpeg or .jpg. This is because JPEGs are lossy, and will filter out these encoding methods, as these methods tend to be high frequency. 
 - The two images are forced to be the same size before combining occurs. It is recommended that the images are resized before using this program. That way the desired aspect respect ratios can be perserved. 
 - This library cannot interface with any transparent images. There must be a background to the image for this system.
+- This is a WINDOWS library right now, due to the .dll extension.
 
 ## Definition of Terms
 
