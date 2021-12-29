@@ -6,10 +6,10 @@ This repo focuses on joining two images together via different means. This repo 
 ## Table of Contents 
 - [Summary](#summary)
 - [Uses](#uses)
-- [Definition of Main Terms](#definition-of-terms)
 - [Required Software](#required-software)
 - [Python Used Modules](#python-used-modules)
 - [Before Starting](#notes)
+- [Definition of Main Terms](#definition-of-terms)
 - [Test Calculations Website](#test-calculations)
 - [Options (Naming Conventions)](#options)
   * [Data Accessibility Options](#data-accessibility-options)
@@ -24,10 +24,7 @@ This repository combines two images together using various methods of encoding. 
 
 - Making NFTs more hardened to right-clicking (one can't access the second image without a code). 
 - Making ARGs that are tougher to crack. 
-- Other stuff.........
-
-## Definition of Terms
-
+- Other ideas you might have...
 
 ## Required Software 
 
@@ -52,6 +49,25 @@ This repository combines two images together using various methods of encoding. 
 
 - All images MUST be stored as .png instead of .jpeg or .jpg. This is because JPEGs are lossy, and will filter out these encoding methods, as these methods tend to be high frequency. 
 - The two images are forced to be the same size before combining occurs. It is recommended that the images are resized before using this program. That way the desired aspect respect ratios can be perserved. 
+- This library cannot interface with any transparent images. There must be a background to the image for this system.
+
+## Definition of Terms
+
+**Pixelwise Encoding/Decoding:** Where the bottom image's pixels are placed in directly on top of the top image's bottom bits. This preserves the original size of the bottom image, but degrades the original colors.
+
+| ![Pixelwise Example Image](https://github.com/jeremybeeman/Steganography-Join-2-Images/blob/main/README_images/pixelwise_example.png) |
+|:---:|
+| **Pixelwise Encoding Example. The encoding level done on this image involved 5 bits of the front image and 3 bits for the bottom image, limiting the bottom image's brightness values.**
+
+**Bitwise Encoding/Decoding:** Where the bottom image's pixels are broken up into their 8-bit brightness levels and then recombined during the decoding phase. This preserves all of the brightness values of hte original image. However, the image must be shrunk to have its data fit within the original image.
+
+| ![Bitwise Example Image](https://github.com/jeremybeeman/Steganography-Join-2-Images/blob/main/README_images/bitwise_example.png) |
+|:---:|
+| **Bitwise Encoding Example. This example shows the bottom bit layer of the image. A pixel of the top image associates to a bit from the bottom image, perserving original brightness but decreasing size**|
+
+**Simple:** All of the pixels or bits of the bottom image aren't scrambled using a seed key. There is no need for a seed key, as the data is arranged in a direct manner (NOTE: while the data may not be scrambled, there might need to be some data available to decode the image. Simple just means all the bitwise/pixelwise data is placed in a linear fashion, and there's not any jumping around of bits/pixels). 
+
+**Seeded:** All of the pixels or bits of the bottom image are scrambled around using a seed key. Without the seed key, it is very hard to extract the bottom image easily. 
 
 ## Test Calculations 
 
