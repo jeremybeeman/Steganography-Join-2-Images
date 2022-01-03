@@ -5,6 +5,26 @@
 #include <stdio.h>
 #include "bit_manipulate.h"
 
+void seeded_pixelwise_encode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* imageJoin, int32_t* imageJoinShape, uint64_t* pixelPermLocs) {
+    const int64_t joinShapeFull = ((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]);
+    const int64_t loopMax = (joinShapeFull);
+    for (int64_t i = 0; i < loopMax; i += 1) {
+        for (short bgr = 0; bgr < 3; bgr++) {
+            imageJoin[pixelPermLocs[i]*3 + bgr] += imageBottom[i*3 + bgr];
+        }
+    }
+}
+
+void seeded_pixelwise_decode(uint8_t* imageBottom, int32_t* imageBottomShape, uint8_t* imageJoin, int32_t* imageJoinShape, uint64_t* pixelPermLocs) {
+    const int64_t joinShapeFull = ((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]);
+    const int64_t loopMax = (joinShapeFull);
+    for (int64_t i = 0; i < loopMax; i += 1) {
+        for (short bgr = 0; bgr < 3; bgr++) {
+            imageJoin[i*3 + bgr] += imageBottom[pixelPermLocs[i] * 3 + bgr];
+        }
+    }
+
+}
  
 void simple_bitwise_encode(uint8_t *imageBottom, int32_t *imageBottomShape, uint8_t *imageJoin, int32_t *imageJoinShape, int32_t unusedBits, uint8_t numBitPlanes) {
     const int64_t joinShapeFull = ((int64_t)imageJoinShape[0] * (int64_t)imageJoinShape[1]) * 3;
