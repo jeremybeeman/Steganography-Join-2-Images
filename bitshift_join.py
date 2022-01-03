@@ -3,13 +3,29 @@ import numpy as np
 import math 
 import random 
 import ctypes
+from os import chdir, getcwd
 #from numba import jit
 #rn only works on windows32
 
 #NOTE: The loopMax needs to be modified to reflect ALL of the bits/pixels. Missing 1 bit/pixel in all but the seeded_bitwise_8X1
 class bitshift_join():
-    def __init__(self):
-        self._bLib = ctypes.CDLL("D:\stegonography\encoding_bottom_images\Steganography-Join-2-Images\\bitshift_manipulation_lib\\x64\Debug\\bitshift_manipulation_lib.dll")
+
+    def __init__(self, dll_filepath = getcwd()+"\\bitshift_manipulation_lib\\x64\\Debug\\bitshift_manipulation_lib.dll"):
+        self._bLib = ctypes.CDLL(dll_filepath)
+        self._bLib.seeded_pixelwise_encode.argtypes = [
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        np.ctypeslib.ndpointer(dtype=np.uint64, ndim=1, flags='C_CONTIGUOUS')                      
+                    ]
+        self._bLib.seeded_pixelwise_decode.argtypes = [
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
+                        np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
+                        np.ctypeslib.ndpointer(dtype=np.uint64, ndim=1, flags='C_CONTIGUOUS')                      
+                    ]
         self._bLib.simple_bitwise_encode.argtypes = [
                         np.ctypeslib.ndpointer(dtype=np.uint8, ndim=3, flags='C_CONTIGUOUS'), 
                         np.ctypeslib.ndpointer(dtype=np.int32, ndim=1, flags='C_CONTIGUOUS'),
@@ -117,9 +133,9 @@ class bitshift_join():
         shapeFront = imgfront.shape
         shapeBehind = imgbehind.shape 
         if shapeFront[0] < shapeBehind[0] or shapeFront[1] < shapeBehind[1]: 
-            imgbehind = cv2.resize(imgbehind, [shapeFront[1], shapeFront[0]], interpolation) 
+            imgbehind = cv2.resize(imgbehind, (shapeFront[1], shapeFront[0]), interpolation) 
         elif shapeFront[0] >= shapeBehind[0] and shapeFront[1] >= shapeBehind[1]: 
-            imgfront = cv2.resize(imgfront, [shapeBehind[1], shapeBehind[0]], interpolation)
+            imgfront = cv2.resize(imgfront, (shapeBehind[1], shapeBehind[0]), interpolation)
         return [imgfront, imgbehind]
         #doesn't resize when both are equal 
 
@@ -150,13 +166,16 @@ class bitshift_join():
             seedKey = self.seedKeyGen(imgfront.shape, 1, 0, imgbehind.shape)
         seedKeyDecode = self.seedKeyExtract(seedKey)
         loopMax = imgfront.shape[0]*imgfront.shape[1]
-        newPixelLoc = np.random.RandomState(seed=seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax)
+        newPixelLoc = np.random.RandomState(seed=seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
         imgfront= np.uint8(np.uint8(imgfront >> (8-bits_used_by_front)) << (8-bits_used_by_front)) # removes bottom bits for joining
         imgbehind = np.uint8(imgbehind >> bits_used_by_front) # sets up the pixels for joining
-        for i in range(0, loopMax):
-            frontLoc = [i % imgfront.shape[0], (i//imgfront.shape[0])]
-            backLoc = [newPixelLoc[i] % imgfront.shape[0], (newPixelLoc[i]//imgfront.shape[0])]
-            imgfront[frontLoc[0]][frontLoc[1]] += imgbehind[backLoc[0]][backLoc[1]]
+        imgFrontShape = np.asarray(imgfront.shape)
+        imgBehindShape = np.asarray(imgbehind.shape)
+        self._bLib.seeded_pixelwise_decode(imgbehind, imgBehindShape, imgfront, imgFrontShape, newPixelLoc)
+        #for i in range(0, loopMax):
+        #    frontLoc = [i % imgfront.shape[0], (i//imgfront.shape[0])]
+        #    backLoc = [newPixelLoc[i] % imgfront.shape[0], (newPixelLoc[i]//imgfront.shape[0])]
+        #    imgfront[frontLoc[0]][frontLoc[1]] += imgbehind[backLoc[0]][backLoc[1]]
 
         return [np.array(imgfront, dtype="uint8"), seedKey]
     
@@ -170,11 +189,15 @@ class bitshift_join():
         imgBottom = np.uint8(joinedImg << bits_used_by_front)
         imgReformat = np.zeros(imgBottom.shape, np.uint8)
         loopMax = joinedImg.shape[0]*joinedImg.shape[1]
-        pixelLoc = np.random.RandomState(seed=seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax)
-        for i in range(0, loopMax):
-            frontLoc = [i % joinedImg.shape[0], (i//joinedImg.shape[0])]
-            backLoc = [pixelLoc[i] % joinedImg.shape[0], (pixelLoc[i]//joinedImg.shape[0])]
-            imgReformat[backLoc[0]][backLoc[1]] += imgBottom[frontLoc[0]][frontLoc[1]]  
+        pixelLoc = np.random.RandomState(seed=seedKeyDecode[1]*seedKeyDecode[2]).permutation(loopMax).astype(np.uint64)
+
+        imgReformatShape = np.asarray(imgReformat.shape)
+        imgBottomShape = np.asarray(imgBottom.shape)
+        self._bLib.seeded_pixelwise_encode(imgBottom, imgBottomShape, imgReformat, imgReformatShape, pixelLoc)
+        #for i in range(0, loopMax):
+        #    frontLoc = [i % joinedImg.shape[0], (i//joinedImg.shape[0])]
+        #    backLoc = [pixelLoc[i] % joinedImg.shape[0], (pixelLoc[i]//joinedImg.shape[0])]
+        #    imgReformat[backLoc[0]][backLoc[1]] += imgBottom[frontLoc[0]][frontLoc[1]]  
 
         return [np.array(imgTop, dtype="uint8"), np.array(imgReformat, dtype="uint8")]
     
