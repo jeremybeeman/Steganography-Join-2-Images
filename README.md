@@ -9,6 +9,7 @@ This repo focuses on joining two images together via different means. This repo 
    * [Required Software](#required-software)
    * [Python Used Modules](#python-used-modules)
 - [Before Starting](#notes)
+- [How to Use](#how-to-use)
 - [Definition of Main Terms](#definitions)
    * [Terms](#terms)
    * [Seed Key Guide](#seed-key-guide)
@@ -53,6 +54,25 @@ This repository combines two images together using various methods of encoding. 
 - The two images are forced to be the same size before combining occurs. It is recommended that the images are resized before using this program. That way the desired aspect respect ratios can be perserved. 
 - This library cannot interface with any transparent images. There must be a background to the image for this system.
 - This is a WINDOWS library right now, due to the .dll extension.
+
+## How to Use 
+
+- Make sure you have all of the necessary dependencies installed (Python and the various libraries). 
+
+``` 
+  pip install numpy==1.20.3
+  pip install opencv-contrib-python==4.5.4.60
+```
+
+- Clone the whole repository because the library uses the .dll inside of bitshift_manipulation_lib folder.
+
+ ``` 
+ git clone https://github.com/jeremybeeman/Steganography-Join-2-Images.git 
+ ```
+ 
+- In the cloned repository, go to the Sample_Usage folder and click on the desired join option file. Each are labeled according to the desired setting. 
+- Change the variables with comments next to them to reflect the desired input pictures to join and locations for output pictures. 
+- For seeded options, make sure to record the seed key that is generated. This is a random seed that will most likely not be the same every time. 
 
 ## Definitions
 
