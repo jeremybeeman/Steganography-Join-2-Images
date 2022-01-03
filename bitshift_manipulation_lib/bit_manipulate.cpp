@@ -31,7 +31,7 @@ void simple_bitwise_encode(uint8_t *imageBottom, int32_t *imageBottomShape, uint
     const int64_t loopMax = (joinShapeFull * ((int64_t)numBitPlanes));
     int64_t currPixel = 0;
     int8_t currBit = 0;
-    for (int64_t i = unusedBits*3; i < loopMax; i+=3) {
+    for (int64_t i = ((int64_t)unusedBits)*3; i < loopMax; i+=3) {
             for (short bgr = 0; bgr < 3; bgr++) {
                 imageJoin[(i % joinShapeFull) + bgr] += (((imageBottom[currPixel + bgr] & (1 << currBit)) >> currBit) << (i / joinShapeFull));
             }
@@ -50,7 +50,7 @@ void simple_bitwise_decode(uint8_t* imageBottom, int32_t* imageBottomShape, uint
     int64_t loopMax = joinShapeFull * ((int64_t)numBitPlanes);
     int64_t currPixel = 0;
     int8_t currBit = 0;
-    for (int64_t i = unusedBits*3; i < loopMax; i += 3) {
+    for (int64_t i = ((int64_t)unusedBits)*3; i < loopMax; i += 3) {
         int64_t currNumBitPlane = (int64_t)((i / ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1] * 3)));
         for (short bgr = 0; bgr < 3; bgr++) {
             imageBottom[currPixel + bgr] |= ((joinedImage[(i % ((int64_t)joinedImageShape[0] * (int64_t)joinedImageShape[1] * 3)) + bgr] & (1<<currNumBitPlane)) >> currNumBitPlane) << currBit;
